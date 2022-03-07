@@ -1,0 +1,360 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container" id="app">
+        <div class="row">
+            <h3 class="mt-5 mb-5"></h3>
+            <div class="col-md-6 offset-md-3">
+                <div class="row mb-3">
+                    <label for="inputEmail" class="col-sm-4 col-form-label">Invoice Date</label>
+                    <div class="col-sm-8">
+                        <input type="date" class="form-control mb-3" v-model="invoice.invoice_date">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label for="inputEmail" class="col-sm-4 col-form-label">Invoice Number</label>
+                    <div class="col-sm-8">
+                        <input type="number" class="form-control mb-3" v-model="invoice.invoice_number">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label for="inputEmail" class="col-sm-4 col-form-label">Customer Number</label>
+                    <div class="col-sm-8">
+                        <select class="form-select" v-model="invoice.customer_id">
+                            <option :value="number" v-for="number in 5">Customer ${ number }</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <button class="btn btn-primary" @click="updateInvoice()">Update Invoice</button>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLine" @click="clearInvoiceLine()">Add Line</button>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <table class="table table-striped table-dark">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Quantity</th>
+                                <th scope="col">Amount</th>
+                                <th scope="col">Vat Amount</th>
+                                <th scope="col">Total</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(line, index) in invoice.invoice_lines">
+                                <th scope="row">${ index + 1 }</th>
+                                <td>${ line.description }</td>
+                                <td>${ line.quantity }</td>
+                                <td>${ line.amount }</td>
+                                <td>${ line.vat_amount }</td>
+                                <td>${ line.total }</td>
+                                <td><button @click="editInvoiceLine(index)" data-bs-toggle="modal" data-bs-target="#updateLine">Edit</button>
+                                    <button @click="deleteInvoiceLine(index)">Trash</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                
+            </div>
+        </div>
+        <div class="modal fade" id="addLine" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="exampleModalLabel">Add Invoice Line</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <label for="inputEmail" class="col-sm-4 col-form-label">Description</label>
+                        <div class="col-sm-8">
+                            <textarea v-model="invoice_line.description" class="form-control mb-3" placeholder=" textarea"></textarea>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="inputEmail" class="col-sm-4 col-form-label">Quantity</label>
+                        <div class="col-sm-8">
+                            <input type="number" v-model="invoice_line.quantity" class="form-control mb-3" >
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="inputEmail" class="col-sm-4 col-form-label">Amount</label>
+                        <div class="col-sm-8">
+                            <input type="number" v-model="invoice_line.amount" @change="setDecimal" class="form-control mb-3" step=".1">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="inputEmail" class="col-sm-4 col-form-label">Vat Amount</label>
+                        <div class="col-sm-8">
+                            <input type="number" v-model="invoice_line.vat_amount" @change="setDecimal" class="form-control mb-3" step=".1">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="button" class="btn btn-primary" @click="addInvoiceLine">Save changes</button>
+                </div>
+              </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="updateLine" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="exampleModalLabel">Update Invoice Line</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <label for="inputEmail" class="col-sm-4 col-form-label">Description</label>
+                        <div class="col-sm-8">
+                            <textarea v-model="invoice_line.description" class="form-control mb-3" placeholder=" textarea"></textarea>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="inputEmail" class="col-sm-4 col-form-label">Quantity</label>
+                        <div class="col-sm-8">
+                            <input type="number" v-model="invoice_line.quantity" class="form-control mb-3" >
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="inputEmail" class="col-sm-4 col-form-label">Amount</label>
+                        <div class="col-sm-8">
+                            <input type="number" v-model="invoice_line.amount" @change="setDecimal" class="form-control mb-3" step=".1">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="inputEmail" class="col-sm-4 col-form-label">Vat Amount</label>
+                        <div class="col-sm-8">
+                            <input type="number" v-model="invoice_line.vat_amount" @change="setDecimal" class="form-control mb-3" step=".1">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="button" class="btn btn-primary" @click="updateInvoiceLine">Save changes</button>
+                </div>
+              </div>
+            </div>
+        </div>
+    </div>
+
+        <textarea style="display:none;" id="invoice"> {{ data}}</textarea>
+
+
+{% endblock %}
+{% block scripts %}
+<script>
+
+    new Vue({
+        delimiters: ['${', '}'],
+        el: "#app",
+        data : {
+            isLoading: false,
+            invoice: {
+                invoice_date : '',
+                invoice_number: '',
+                customer_id: '',
+                invoice_lines : [],
+            },
+            editIndex: 0,
+            invoice_line: {
+                invoice_id : '',
+                description: '',
+                quantity: 0,
+                amount: 0.0,
+                vat_amount: 0.0,
+                total:0.0
+            }
+        },
+        mounted() {
+            this.invoice = JSON.parse($("#invoice").val());
+
+        },
+        methods: {
+            addInvoiceLine(){
+                this.invoice_line.total = parseFloat(this.invoice_line.amount * this.invoice_line.quantity) + parseFloat(this.invoice_line.vat_amount);
+                this.invoice_line.invoice_id = this.invoice.id;
+                const formData = new FormData();
+                for ( var key in this.invoice_line ) {
+                    let value = this.invoice_line[key];
+                    formData.append(key, value);
+                }
+                // formData.append('_token', $('input[name=_token]').val());
+
+                this.isLoading = true;
+
+                axios.post('/add/line', formData)
+                    .then((response) => {
+                        this.isLoading = false;
+                        this.invoice_line.invoice_id = response.data.lineId;
+                        this.invoice.invoice_lines.push(Object.assign({}, this.invoice_line, {}));
+                        $("#addLine").modal("hide");
+                        this.clearInvoiceLine();
+
+                        this.$notify({
+                            title: 'Success',
+                            message: response.data.message,
+                            type: 'success'
+                        });
+
+                    })
+                    .catch((error) => {
+                        this.isLoading = false;
+
+                        this.$notify.error({
+                            title: 'Error',
+                            message: error.response.data.message
+                        });
+                    });
+            
+               
+            },
+            updateInvoice(){
+                const formData = new FormData();
+                for ( var key in this.invoice ) {
+                    let value = this.invoice[key];
+                    if(key == 'invoice_lines'){
+                        value = JSON.stringify(value);
+                    }
+                    formData.append(key, value);
+                }
+                // formData.append('_token', $('input[name=_token]').val());
+
+                this.isLoading = true;
+
+                axios.post('/update/'+ this.invoice.id, formData)
+                    .then((response) => {
+                        this.isLoading = false;
+
+                        this.$notify({
+                            title: 'Success',
+                            message: response.data.message,
+                            type: 'success'
+                        });
+
+                    })
+                    .catch((error) => {
+                        this.isLoading = false;
+
+                        this.$notify.error({
+                            title: 'Error',
+                            message: error.response.data.message
+                        });
+                    });
+            },
+            editInvoiceLine(index){
+                this.invoice_line = (Object.assign({},  this.invoice.invoice_lines[index], {}));
+                this.editIndex = index
+            },
+            updateInvoiceLine(){
+                this.invoice_line.total = parseFloat(this.invoice_line.amount * this.invoice_line.quantity) + parseFloat(this.invoice_line.vat_amount);
+                const formData = new FormData();
+                for ( var key in this.invoice_line ) {
+                    let value = this.invoice_line[key];
+                    formData.append(key, value);
+                }
+
+                this.isLoading = true;
+
+                axios.post('/update/line/'+ this.invoice_line.id, formData)
+                    .then((response) => {
+                        this.isLoading = false;
+
+                        this.$notify({
+                            title: 'Success',
+                            message: response.data.message,
+                            type: 'success'
+                        });
+
+                        this.invoice.invoice_lines[this.editIndex] = (Object.assign({},  this.invoice_line, {}));
+                        this.clearInvoiceLine();
+                        $("#updateLine").modal("hide");
+
+                    })
+                    .catch((error) => {
+                        this.isLoading = false;
+
+                        this.$notify.error({
+                            title: 'Error',
+                            message: error.response.data.message
+                        });
+                    });
+               
+            },
+            deleteInvoiceLine(index){
+
+                let line = Object.assign({}, this.invoice.invoice_lines[index]);
+
+                    const customAlert = swal({
+                        title: 'Warning',
+                        text: `Are you sure you want to delete this Invoice Line? This action cannot be undone.`,
+                        icon: 'warning',
+                        closeOnClickOutside: false,
+                        buttons: {
+                            cancel: {
+                                text: "cancel",
+                                visible: true,
+                                className: "",
+                                closeModal: true,
+                            },
+                            confirm: {
+                                text: "Confirm",
+                                value: 'delete',
+                                visible: true,
+                                className: "btn-danger",
+                            }
+                        }
+                    });
+                    customAlert.then(value => {
+                        if (value == 'delete') {
+                            this.isLoading = true;
+                            axios.delete('/delete/line/'+ line.id)
+                                .then(response => {
+                                    this.isLoading = false;
+                                    this.invoice.invoice_lines.splice(index, 1);
+                                
+
+                                }).catch(error => {
+                                    if (error.response) {
+                                        this.isLoading = false;
+                                        this.$notify.error({
+                                            title: 'Error',
+                                            message: error.response.data.message
+                                        });
+                                    }
+                                });
+
+                        }
+                    });
+            },
+            setDecimal(type){
+                this.invoice_line.amount = parseFloat(this.invoice_line.amount).toFixed(1);
+                this.invoice_line.vat_amount = parseFloat(this.invoice_line.vat_amount).toFixed(1);
+            },
+            clearInvoiceLine(){
+                this.invoice_line = {
+                    invoice_id : '',
+                    description: '',
+                    quantity: 0,
+                    amount: 0.0,
+                    vat_amount: 0.0,
+                    total:0.0
+                }
+            }
+        }
+            
+    })
+</script>
+{% endblock %}
